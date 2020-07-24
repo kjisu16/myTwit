@@ -1,0 +1,112 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>{% block title %}myTwitter{% endblock %}</title>
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+        <link href="{% static 'network/styles.css' %}" rel="stylesheet">
+        <script type="text/javascript" src="{% static 'network/jquery-3.5.1.js' %}"></script>
+    </head>
+    <body>
+
+        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+            <a class="navbar-brand" href="#">Network</a>
+          
+            <div class="navbar-collapse collapse w-100 order-1 order-md-0 dual-collapse2">
+              <ul class="navbar-nav mx-auto">
+                {% if user.is_authenticated %}
+                  <li class="nav-item">
+                      <a class="nav-link" href="{% url 'index' %}">Home</a>
+                  </li>
+                  <li class="nav-item">
+                    <a class="nav-link" href="{% url 'explore' %}">Explore</a>
+                  </li>
+                  <li class="nav-item">
+                      <a class="nav-link" href="{% url 'profile' user.username %}"><strong>@{{ user.username }}</strong></a>
+                  </li>
+                  <li class="nav-item">
+                      <a class="nav-link" href="{% url 'logout' %}">Log Out</a>
+                  </li>
+                {% else %}
+                  <li class="nav-item">
+                      <a class="nav-link" href="{% url 'login' %}">Log In</a>
+                  </li>
+                  <li class="nav-item">
+                      <a class="nav-link" href="{% url 'register' %}">Register</a>
+                  </li>
+                {% endif %}
+              </ul>
+            </div>
+          </nav>
+        
+        <div class="body">
+            {% block body %}
+            {% endblock %}
+        </div>
+
+        {% block scripts %}
+          <script>
+            $(document).ready(function(){
+              $('.like-form').submit(function(e){
+                e.preventDefault()
+                console.log('works!')
+      
+                const post_id = $(this).attr('id')
+      
+                const likeText = $(`#like-btn${post_id}`).text()
+                console.log(likeText)
+                const trim = $.trim(likeText)
+                console.log(trim)
+      
+                const url = $('.like-form').attr('action')
+      
+                $.ajax({
+                  type: 'POST',
+                  url: url,
+                  data: {
+                    'csrfmiddlewaretoken': $('input[name=csrfmiddlewaretoken]').val(),
+                    'post_id': post_id,
+                  },
+      
+                  success: function() {
+                    console.log('success')
+      
+                    $.ajax({
+                      type: 'GET',
+                      url: 'http://127.0.0.1:8000/serialized/',
+                      success: function(response) {
+                        console.log(response)
+      
+                        $.each(response, function(index, element){
+                          if (post_id == element.id) {
+                            if (trim == 'Like') {
+                              console.log('unlike')
+                              $(`#like-btn${post_id}`).html('Unlike')
+                            } else if (trim == "Unlike") {
+                              console.log('like')
+                              $(`#like-btn${post_id}`).html('Like')
+                            } else {
+                              console.log('oops')
+                            }
+      
+      
+                          }
+                        })
+                      },
+                      error: function(error){
+                        console.log(error)
+                      }
+                    })
+                  },
+      
+                  error: function(error){
+                    console.log('error', error)
+                  }
+                })
+              })
+            })
+          </script>
+        {% endblock scripts %}
+    </body>
+</html>

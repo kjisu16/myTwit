@@ -1,0 +1,46 @@
+{% extends "network/layout.html" %}
+
+{% block body %}
+
+  <h5>@{{ profile }}</h5>
+
+  <div>Followers: {{ follower_num }}</div>
+  <div>Following: {{ following_num }}</div>
+
+  {% if profile != request.user and followed == False %}
+    
+    <form method="post">
+      {% csrf_token %}
+      <input type="submit" name="follow" value="Follow">
+    </form>
+
+  {% elif profile != request.user and followed %}
+    <form method="post">
+      {% csrf_token %}
+      <input type="submit" name="follow" value="Unfollow">
+    </form>
+  {% endif %}
+
+  {% for post in user_posts %}
+    <div className="each post">
+      {{ post.content }}
+      <form action="{% url 'like_post' %}" method='POST' class='like-form' id="{{ post.id }}">
+        {% csrf_token %}
+        <input type='hidden' name='post_id' id='post_id' value='{{ post.id }}'>
+        <button class='like-btn' id="like-btn{{ post.id }}" type="submit">
+          {% if user not in post.liked.all %}
+            Like
+          {% else %}
+            Unlike
+          {% endif %}
+        </button>
+      </form>
+      <strong id="num-like{{ post.id }}">{{ post.liked.all.count }}</strong>
+      {{ post.created_on }}
+    </div>
+  {% empty %}
+    <div>No posts.</div>
+  {% endfor %}
+
+
+{% endblock %}
