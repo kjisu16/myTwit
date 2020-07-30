@@ -3,6 +3,8 @@ from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render, redirect
 from django.urls import reverse
+from django.db.models import Count
+from django.core.paginator import Paginator
 
 from .models import User, Post, Follow
 
@@ -25,7 +27,7 @@ def index(request):
     try:
       user = User.objects.get(pk=request.user.id)
     except User.DoesNotExist:
-      return render(request, "network/index.html")
+      return render(request, "network/login.html")
     
     # Get posts from followings + user
     followings = User.objects.filter(followers__follower=user)
@@ -35,8 +37,24 @@ def index(request):
     display_posts = list(chain(following_posts, user_posts))
     sorted_display_posts = sorted(display_posts, key=operator.attrgetter('created_on'), reverse=True)
 
+    # Pagination for infinite scroll
+    paginator = Paginator(sorted_display_posts, 10)
+    page = request.GET.get('page', 1)
+    try:
+      posts = paginator.page(page)
+    except(EmptyPage, InvalidPage):
+      posts = paginator.page(paginator.num_pages)
+
+    # Get top 3 posts with most likes
+    top_liked_posts = Post.objects.annotate(total_likes=Count('liked')).order_by('-total_likes')[:3]
+
+    # Get top 3 most followed users
+    top_followed_users = User.objects.annotate(total_follower=Count('followers')).order_by('-total_follower')[:3]
+
     return render(request, "network/index.html", {
-      "posts": sorted_display_posts
+      "posts": posts,
+      "top_liked_posts": top_liked_posts,
+      "top_followed_users": top_followed_users
     })
 
 def like_post(request):
@@ -51,22 +69,10 @@ def like_post(request):
     else:
       post.liked.add(user)
 
-    like, created = Like.objects.get_or_create(user=user, post_id=post_id)
-
-    """
-    if not created:
-      if like.value == 'Like':
-        like.value = 'Unlike'
-      else:
-        like.value = 'Like'
-
-    like.save()
-    """
-
   return HttpResponse()
 
 def post_serialized_view(request):
-  data = list(Post.objects.values())
+  data = [p.to_dict() for p in Post.objects.all()]
   return JsonResponse(data, safe=False)
 
 def explore(request):
@@ -75,8 +81,16 @@ def explore(request):
   user = User.objects.get(pk=request.user.id)
   ex_user_posts = Post.objects.exclude(user=user).order_by('-created_on')
 
+  # Get top 3 posts with most likes
+  top_liked_posts = Post.objects.annotate(total_likes=Count('liked')).order_by('-total_likes')[:3]
+
+  # Get top 3 most followed users
+  top_followed_users = User.objects.annotate(total_follower=Count('followers')).order_by('-total_follower')[:3]
+
   return render(request, "network/explore.html", {
-    "ex_user_posts": ex_user_posts
+    "ex_user_posts": ex_user_posts,
+    "top_liked_posts": top_liked_posts,
+    "top_followed_users": top_followed_users
   })
 
 def profile(request, username):
@@ -143,6 +157,8 @@ def register(request):
   if request.method == "POST":
       username = request.POST["username"]
       email = request.POST["email"]
+      first_name = request.POST["firstname"]
+      last_name = request.POST["lastname"]
 
       # Ensure password matches confirmation
       password = request.POST["password"]
@@ -154,7 +170,7 @@ def register(request):
 
       # Attempt to create new user
       try:
-          user = User.objects.create_user(username, email, password)
+          user = User.objects.create_user(username, email, password, first_name=first_name, last_name=last_name)
           user.save()
       except IntegrityError:
           return render(request, "network/register.html", {

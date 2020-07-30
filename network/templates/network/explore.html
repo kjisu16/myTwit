@@ -1,29 +1,64 @@
 {% extends "network/layout.html" %}
 
 {% block body %}
-
-  <h5>Explore</h5>
-
-  {% for post in ex_user_posts %}
-    <div className="each post">
-      {{ post.content }}
-      <a href="{% url 'profile' post.user %}">@{{ post.user }}</a>
-      <form action="{% url 'like_post' %}" method='POST' class='like-form' id="{{ post.id }}">
-        {% csrf_token %}
-        <input type='hidden' name='post_id' id='post_id' value='{{ post.id }}'>
-        <button class='like-btn' id="like-btn{{ post.id }}" type="submit">
-          {% if user not in post.liked.all %}
-            Like
-          {% else %}
-            Unlike
-          {% endif %}
-        </button>
-      </form>
-      <strong id="num-like{{ post.id }}">{{ post.liked.all.count }}</strong>
-      {{ post.created_on }}
+  <div class="flex-container">
+    <div class="flex-child leftexp">
+      <h3>Explore</h3>
+      <div class="top-likes exp">
+        <h5>Trending posts </h5>
+        {% for post in top_liked_posts %}
+          <div class="each-post">
+            <a href="{% url 'profile' post.user %}" class="post-name">{{ post.user.first_name }} {{ post.user.last_name }}</a>
+            <a href="{% url 'profile' post.user %}" class="post-user">@{{ post.user }}</a>
+            <p class="post-content sm">{{ post.content }}</p>
+          </div>
+        {% endfor %}
+      </div>
+      <div class="all-posts exp">
+        {% for post in ex_user_posts %}
+          <div class="each-post">
+            <div class="post-left"><img src="{{ post.user.profilepic.url }}" width="50" height="50"></div>
+            <div class="post-right">
+              <a href="{% url 'profile' post.user %}" class="post-name">{{ post.user.first_name }} {{ post.user.last_name }}</a>
+              <a href="{% url 'profile' post.user %}" class="post-user">@{{ post.user }}</a>
+              <span class="post-date">{{ post.get_date }}</span>
+              <br>
+              <p class="post-content">{{ post.content }}</p>
+            </div>
+            <form action="{% url 'like_post' %}" method='POST' class='like-form' id="{{ post.id }}">
+              {% csrf_token %}
+              <input type='hidden' name='post_id' id='post_id' value='{{ post.id }}'>
+              <button class='like-btn' id="like-btn{{ post.id }}" type="submit">
+                {% if user not in post.liked.all %}
+                  <span id="heart"><i class="fa fa-heart-o" aria-hidden="true" ></i></span>
+                {% else %}
+                  <span id="heart"><i class="fa fa-heart" aria-hidden="true" ></i></span>
+                {% endif %}
+              </button>
+              <span id="num-like{{ post.id }}">{{ post.total_likes }}</span>
+            </form>
+          </div>
+        {% empty %}
+          <div>No posts.</div>
+        {% endfor %}
+      </div>
     </div>
-  {% empty %}
-    <div>No posts.</div>
-  {% endfor %}
+    <div class="flex-child rightexp">
+      <div class="top-users">
+        <h5 class="title">Who to follow</h5>
+        {% for user in top_followed_users %}
+          <div class="each-user">
+            <div class="user-left"><img src="{{ user.profilepic.url }}" width="50" height="50"></div>
+            <div class="user-right">
+              <a href="{% url 'profile' user.username %}" class="post-name">{{ user.first_name }} {{ user.last_name }}</a>
+              <br>
+              <a href="{% url 'profile' user.username %}" class="post-user">@{{ user.username }}</a>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
   
 {% endblock %}

@@ -3,15 +3,18 @@
 <!DOCTYPE html>
 <html lang="en">
     <head>
-        <title>{% block title %}myTwitter{% endblock %}</title>
+        <title>{% block title %}myTweety{% endblock %}</title>
         <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
         <link href="{% static 'network/styles.css' %}" rel="stylesheet">
         <script type="text/javascript" src="{% static 'network/jquery-3.5.1.js' %}"></script>
+        <script src="{% static 'network/jquery.waypoints.min.js' %}"></script>
+        <script src="{% static 'network/infinite.min.js' %}"></script>
+        <script src="https://kit.fontawesome.com/3685670ef9.js" crossorigin="anonymous"></script>
     </head>
     <body>
 
-        <nav class="navbar navbar-expand-lg navbar-light bg-light">
-            <a class="navbar-brand" href="#">Network</a>
+        <nav class="navbar navbar-expand-lg navbar-light bg-light"> 
+            <a class="navbar-brand" href="{% url 'index' %}">myTweety</a>
           
             <div class="navbar-collapse collapse w-100 order-1 order-md-0 dual-collapse2">
               <ul class="navbar-nav mx-auto">
@@ -40,11 +43,11 @@
             </div>
           </nav>
         
-        <div class="body">
-            {% block body %}
-            {% endblock %}
+        <div class='body'>
+          {% block body %}
+          {% endblock %}
         </div>
-
+       
         {% block scripts %}
           <script>
             $(document).ready(function(){
@@ -54,10 +57,8 @@
       
                 const post_id = $(this).attr('id')
       
-                const likeText = $(`#like-btn${post_id}`).text()
-                console.log(likeText)
+                const likeText = $(`#like-btn${post_id}`).html()
                 const trim = $.trim(likeText)
-                console.log(trim)
       
                 const url = $('.like-form').attr('action')
       
@@ -75,21 +76,20 @@
                     $.ajax({
                       type: 'GET',
                       url: 'http://127.0.0.1:8000/serialized/',
-                      success: function(response) {
-                        console.log(response)
-      
+                      success: function(response) {      
                         $.each(response, function(index, element){
                           if (post_id == element.id) {
-                            if (trim == 'Like') {
+                            if (trim == '<span id="heart"><i class="fa fa-heart" aria-hidden="true"></i></span>') {
                               console.log('unlike')
-                              $(`#like-btn${post_id}`).html('Unlike')
-                            } else if (trim == "Unlike") {
+                              $(`#like-btn${post_id}`).html('<span id="heart"><i class="fa fa-heart-o" aria-hidden="true"></i></span>')
+                            } else if (trim == '<span id="heart"><i class="fa fa-heart-o" aria-hidden="true"></i></span>') {
                               console.log('like')
-                              $(`#like-btn${post_id}`).html('Like')
+                              $(`#like-btn${post_id}`).html('<span id="heart"><i class="fa fa-heart" aria-hidden="true"></i></span>')
                             } else {
                               console.log('oops')
                             }
-      
+                          
+                          $(`#num-like${post_id}`).html(element.liked)
       
                           }
                         })
@@ -106,6 +106,17 @@
                 })
               })
             })
+
+            var infinite = new Waypoint.Infinite({
+              element: $('.infinite-container')[0],
+              onBeforePageLoad: function() {
+                $('.spinner-grow').show();
+              },
+              onAfterPageLoad: function() {
+                $('spinner-grow').hide();
+              }
+            });
+            
           </script>
         {% endblock scripts %}
     </body>

@@ -2,37 +2,81 @@
 
 {% block body %}
   {% if user.is_authenticated %}
-    <div class="left">
-        <div class="new-post">
-          <form method="post">
-            {% csrf_token %}
+    <div class="flex-container">
+      <div class="flex-child left">
+          <div class="new-post">
+            <form method="post">
+              {% csrf_token %}
               <input class="new-content" required type="text" name="content" placeholder="Share your story!">
+              <input class="new-content-btn" type="submit" value="Tweet">
+            </form>
+          </div>
+          <div class="all-posts infinite-container">
+            <h3>Newsfeed</h3>
+            {% for post in posts %}
+              <div class="each-post infinite-item">
+                <div class="post-left"><img src="{{ post.user.profilepic.url }}" width="50" height="50"></div>
+                <div class="post-right">
+                  <a href="{% url 'profile' post.user %}" class="post-name">{{ post.user.first_name }} {{ post.user.last_name }}</a>
+                  <a href="{% url 'profile' post.user %}" class="post-user">@{{ post.user }}</a>
+                  <span class="post-date">{{ post.get_date }}</span>
+                  <br>
+                  <p class="post-content">{{ post.content }}</p>
+                </div>
+                <form action="{% url 'like_post' %}" method='POST' class='like-form' id="{{ post.id }}">
+                    {% csrf_token %}
+                    <input type='hidden' name='post_id' id='post_id' value='{{ post.id }}'>
+                    <button class='like-btn' id="like-btn{{ post.id }}" type="submit">
+                      {% if user not in post.liked.all %}
+                        <span id="heart"><i class="fa fa-heart-o" aria-hidden="true" ></i></span>
+                      {% else %}
+                        <span id="heart"><i class="fa fa-heart" aria-hidden="true" ></i></span>
+                      {% endif %}
+                    </button>
+                    <span id="num-like{{ post.id }}">{{ post.total_likes }}</span>
+                </form>
+              </div>
+            {% empty %}
+              <div>Welcome to myTwit! Twit your first post to share with the world (:</div>
+            {% endfor %}
+          </div>
+
+          {% if posts.has_next %}
+            <a class="infinite-more-link" href="?page={{ posts.next_page_number }}"></a>
+          {% endif %}
+
+          <div class="text-center" style="display:none;">
+            <div class="spinner-grow text-danger" role="status">
+                <span class="sr-only">Loading...</span>
             </div>
-            <input class="new-content-btn" type="submit" value="Post">
-          </form>
-        </div>
-        <div class="all-posts">
-          <h3>Newsfeed</h3>
-          {% for post in posts %}
-            <div class="each-post">
-              {{ post.content }}
-              <a href="{% url 'profile' post.user %}">@{{ post.user }}</a>
-              <form action="{% url 'like_post' %}" method='POST' class='like-form' id="{{ post.id }}">
-                  {% csrf_token %}
-                  <input type='hidden' name='post_id' id='post_id' value='{{ post.id }}'>
-                  <button class='like-btn' id="like-btn{{ post.id }}" type="submit">
-                    {% if user not in post.liked.all %}
-                      Like
-                    {% else %}
-                      Unlike
-                    {% endif %}
-                  </button>
-              </form>
-              <strong id="num-like{{ post.id }}">{{ post.liked.all.count }}</strong>
-              {{ post.created_on }}
-            </div>
-          {% endfor %}
-        </div>
+          </div> 
+      </div>
+
+      <div class="flex-child right">
+          <div class="top-likes">
+            <h5>Trending posts </h5>
+            {% for post in top_liked_posts %}
+              <div class="each-post">
+                <a href="{% url 'profile' post.user %}" class="post-name">{{ post.user.first_name }} {{ post.user.last_name }}</a>
+                <a href="{% url 'profile' post.user %}" class="post-user">@{{ post.user }}</a>
+                <p class="post-content sm">{{ post.content }}</p>
+              </div>
+            {% endfor %}
+          </div>
+          <div class="top-users">
+            <h5 class="title">Who to follow</h5>
+            {% for user in top_followed_users %}
+              <div class="each-user">
+                <div class="user-left"><img src="{{ user.profilepic.url }}" width="50" height="50"></div>
+                <div class="user-right">
+                  <a href="{% url 'profile' user.username %}" class="post-name">{{ user.first_name }} {{ user.last_name }}</a>
+                  <br>
+                  <a href="{% url 'profile' user.username %}" class="post-user">@{{ user.username }}</a>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+      </div>
     </div>
   {% else %}
     <h5>Log In to continue</h5>
